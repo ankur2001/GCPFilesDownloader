@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.example</groupId>
+    <artifactId>GCP-downloader</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+    <dependencies>
+    <dependency>
+        <groupId>com.google.cloud</groupId>
+        <artifactId>google-cloud-storage</artifactId>
+        <version>2.30.0</version> <!-- Check for latest -->
+    </dependency>
+    </dependencies>
+
+
+</project>
+
+package org.example;
+
+import com.google.auth.oauth2.ServiceAccountCredentials;
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.Bucket;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
+
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+
+public class Main {
+
+    public static void main(String[] args) throws IOException {
+        // Your service account key file path
+        String credentialsPath = "path/to/your-service-account-key.json";
+
+        // Your project ID and bucket name
+        String projectId = "your-project-id";
+        String bucketName = "your-bucket-name";
+        String downloadDir = "downloads/"; // local folder
+
+        // Load credentials from JSON key file
+        Storage storage = StorageOptions.newBuilder()
+                .setProjectId(projectId)
+                .setCredentials(ServiceAccountCredentials.fromStream(new FileInputStream(credentialsPath)))
+                .build()
+                .getService();
+
+        // Get the bucket
+        Bucket bucket = storage.get(bucketName);
+
+        // Download all objects
+        for (Blob blob : bucket.list().iterateAll()) {
+            String fileName = blob.getName();
+            System.out.println("Downloading: " + fileName);
+
+            try (FileOutputStream fos = new FileOutputStream(downloadDir + fileName)) {
+                ReadableByteChannel reader = Channels.newChannel(new ByteArrayInputStream(blob.getContent()));
+                fos.getChannel().transferFrom(reader, 0, Long.MAX_VALUE);
+            }
+
+            System.out.println("Downloaded: " + fileName);
+        }
+    }
+}
