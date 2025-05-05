@@ -1,3 +1,54 @@
+========
+version 0
+===========
+
+const { Storage } = require('@google-cloud/storage');
+const fs = require('fs');
+const path = require('path');
+
+// === CONFIGURATION ===
+const GS_URI = 'gs://testgcpdownload1234'; // Your gs://bucket URI
+const DEST_FOLDER = './downloads';         // Local folder to save files
+const KEY_FILE = 'service-account-key.json'; // Service account key path
+
+// === HELPER: Extract bucket name from gs:// URI ===
+function parseBucketName(gsUri) {
+  if (!gsUri.startsWith('gs://')) {
+    throw new Error('Invalid GCS URI. It should start with "gs://".');
+  }
+  const parts = gsUri.replace('gs://', '').split('/');
+  return parts[0]; // Only bucket name
+}
+
+async function downloadFromGsUri(gsUri, destinationFolder) {
+  const bucketName = parseBucketName(gsUri);
+  const storage = new Storage({ keyFilename: KEY_FILE });
+
+  const bucket = storage.bucket(bucketName);
+  const [files] = await bucket.getFiles();
+
+  if (!fs.existsSync(destinationFolder)) {
+    fs.mkdirSync(destinationFolder, { recursive: true });
+  }
+
+  for (const file of files) {
+    const destPath = path.join(destinationFolder, file.name);
+    const dir = path.dirname(destPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    console.log(`⬇️  Downloading: ${file.name}`);
+    await file.download({ destination: destPath });
+  }
+
+  console.log('✅ All files downloaded successfully.');
+}
+
+// === RUN ===
+downloadFromGsUri(GS_URI, DEST_FOLDER).catch(console.error);
+
+
 =============
 Verion 1
 ============
