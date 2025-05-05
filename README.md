@@ -1,3 +1,40 @@
+#node js
+
+const { Storage } = require('@google-cloud/storage');
+const fs = require('fs');
+const path = require('path');
+
+// Replace with the path to your downloaded service account key file
+const SERVICE_ACCOUNT_KEY_PATH = './acquired-racer-458623-j7-fe1d75120c56.json';
+
+// Replace with your bucket and object details
+const BUCKET_NAME = 'your-bucket-name';
+const FILE_NAME = 'your-object-name.ext'; // e.g., report.pdf
+const DESTINATION = 'downloaded-file.ext'; // Local file destination
+
+async function downloadFile() {
+  // Step 1: Create a Storage client with service account credentials
+  const storage = new Storage({
+    keyFilename: SERVICE_ACCOUNT_KEY_PATH
+  });
+
+  // Step 2: Download the file from GCS
+  const options = {
+    destination: path.join(__dirname, DESTINATION),
+  };
+
+  try {
+    await storage.bucket(BUCKET_NAME).file(FILE_NAME).download(options);
+    console.log(`File downloaded to ${DESTINATION}`);
+  } catch (err) {
+    console.error('Error downloading file:', err.message);
+  }
+}
+
+downloadFile();
+
+====================
+
 # GCPFilesDownloader
 
 <dependencies>
