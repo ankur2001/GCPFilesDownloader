@@ -1,3 +1,53 @@
+=============
+Verion 1
+============
+
+const { Storage } = require('@google-cloud/storage');
+const fs = require('fs');
+const path = require('path');
+
+const BUCKET_NAME = 'your-bucket-name'; // Replace with your bucket name
+const DEST_FOLDER = './downloads';      // Replace with your destination folder
+const KEY_FILE = 'service-account-key.json'; // Path to your service account key
+
+async function downloadBucketFiles() {
+  const storage = new Storage({ keyFilename: KEY_FILE });
+
+  const bucket = storage.bucket(BUCKET_NAME);
+  const [files] = await bucket.getFiles();
+
+  if (!fs.existsSync(DEST_FOLDER)) {
+    fs.mkdirSync(DEST_FOLDER, { recursive: true });
+  }
+
+  for (const file of files) {
+    const destPath = path.join(DEST_FOLDER, file.name);
+    const dir = path.dirname(destPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    console.log(`Downloading: ${file.name}`);
+    await file.download({ destination: destPath });
+  }
+
+  console.log('✅ All files downloaded successfully.');
+}
+
+downloadBucketFiles().catch(console.error);
+
+=============
+Verion 2
+============
+
+
+
+
+
+
+
+
+
 #node js
 
 const { Storage } = require('@google-cloud/storage');
