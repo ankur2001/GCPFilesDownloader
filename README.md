@@ -1,3 +1,71 @@
+const { Storage } = require('@google-cloud/storage');
+const fs = require('fs');
+const path = require('path');
+
+// === CONFIGURATION ===
+const GS_URI = 'gs://testgcpdownload1234';
+const DEST_FOLDER = './downloads';
+const KEY_FILE = './acquired-racer-458623-j7-fe1d75120c56.json';
+const START_NUMBER = 3034; // Start from IMG_3034.JPG
+
+// === Extract bucket name from gs:// URI ===
+function parseBucketName(gsUri) {
+  if (!gsUri.startsWith('gs://')) {
+    throw new Error('Invalid GCS URI. It should start with "gs://".');
+  }
+  const parts = gsUri.replace('gs://', '').split('/');
+  return parts[0];
+}
+
+async function downloadFromGsUri(gsUri, destinationFolder) {
+  const bucketName = parseBucketName(gsUri);
+  const storage = new Storage({ keyFilename: KEY_FILE });
+
+  const bucket = storage.bucket(bucketName);
+  const [files] = await bucket.getFiles();
+
+  // Sort by filename
+  files.sort((a, b) => a.name.localeCompare(b.name));
+
+  if (!fs.existsSync(destinationFolder)) {
+    fs.mkdirSync(destinationFolder, { recursive: true });
+  }
+
+  for (const file of files) {
+    const baseName = path.basename(file.name); // e.g., IMG_3034.JPG
+    const match = baseName.match(/^IMG_(\d+)\.JPG$/i);
+
+    if (!match) {
+      continue; // Skip if filename doesn't match expected pattern
+    }
+
+    const fileNum = parseInt(match[1], 10);
+    if (fileNum < START_NUMBER) {
+      continue; // Skip files before the start number
+    }
+
+    const destPath = path.join(destinationFolder, file.name);
+    const dir = path.dirname(destPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    console.log(`⬇️  Downloading: ${file.name}`);
+    await file.download({ destination: destPath });
+  }
+
+  console.log(`✅ Files from IMG_${START_NUMBER}.JPG onward downloaded successfully.`);
+}
+
+// === RUN ===
+downloadFromGsUri(GS_URI, DEST_FOLDER).catch(console.error);
+
+
+================================
+
+
+
+
 # GCPFilesDownloader
 
 <dependencies>
