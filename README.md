@@ -1,3 +1,141 @@
+========
+version 0
+===========
+
+const { Storage } = require('@google-cloud/storage');
+const fs = require('fs');
+const path = require('path');
+
+// === CONFIGURATION ===
+const GS_URI = 'gs://testgcpdownload1234'; // Your gs://bucket URI
+const DEST_FOLDER = './downloads';         // Local folder to save files
+const KEY_FILE = 'service-account-key.json'; // Service account key path
+
+// === HELPER: Extract bucket name from gs:// URI ===
+function parseBucketName(gsUri) {
+  if (!gsUri.startsWith('gs://')) {
+    throw new Error('Invalid GCS URI. It should start with "gs://".');
+  }
+  const parts = gsUri.replace('gs://', '').split('/');
+  return parts[0]; // Only bucket name
+}
+
+async function downloadFromGsUri(gsUri, destinationFolder) {
+  const bucketName = parseBucketName(gsUri);
+  const storage = new Storage({ keyFilename: KEY_FILE });
+
+  const bucket = storage.bucket(bucketName);
+  const [files] = await bucket.getFiles();
+
+  if (!fs.existsSync(destinationFolder)) {
+    fs.mkdirSync(destinationFolder, { recursive: true });
+  }
+
+  for (const file of files) {
+    const destPath = path.join(destinationFolder, file.name);
+    const dir = path.dirname(destPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    console.log(`⬇️  Downloading: ${file.name}`);
+    await file.download({ destination: destPath });
+  }
+
+  console.log('✅ All files downloaded successfully.');
+}
+
+// === RUN ===
+downloadFromGsUri(GS_URI, DEST_FOLDER).catch(console.error);
+
+
+=============
+Verion 1
+============
+
+const { Storage } = require('@google-cloud/storage');
+const fs = require('fs');
+const path = require('path');
+
+const BUCKET_NAME = 'your-bucket-name'; // Replace with your bucket name
+const DEST_FOLDER = './downloads';      // Replace with your destination folder
+const KEY_FILE = 'service-account-key.json'; // Path to your service account key
+
+async function downloadBucketFiles() {
+  const storage = new Storage({ keyFilename: KEY_FILE });
+
+  const bucket = storage.bucket(BUCKET_NAME);
+  const [files] = await bucket.getFiles();
+
+  if (!fs.existsSync(DEST_FOLDER)) {
+    fs.mkdirSync(DEST_FOLDER, { recursive: true });
+  }
+
+  for (const file of files) {
+    const destPath = path.join(DEST_FOLDER, file.name);
+    const dir = path.dirname(destPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    console.log(`Downloading: ${file.name}`);
+    await file.download({ destination: destPath });
+  }
+
+  console.log('✅ All files downloaded successfully.');
+}
+
+downloadBucketFiles().catch(console.error);
+
+=============
+Verion 2
+============
+
+
+
+
+
+
+
+
+
+#node js
+
+const { Storage } = require('@google-cloud/storage');
+const fs = require('fs');
+const path = require('path');
+
+// Replace with the path to your downloaded service account key file
+const SERVICE_ACCOUNT_KEY_PATH = './acquired-racer-458623-j7-fe1d75120c56.json';
+
+// Replace with your bucket and object details
+const BUCKET_NAME = 'your-bucket-name';
+const FILE_NAME = 'your-object-name.ext'; // e.g., report.pdf
+const DESTINATION = 'downloaded-file.ext'; // Local file destination
+
+async function downloadFile() {
+  // Step 1: Create a Storage client with service account credentials
+  const storage = new Storage({
+    keyFilename: SERVICE_ACCOUNT_KEY_PATH
+  });
+
+  // Step 2: Download the file from GCS
+  const options = {
+    destination: path.join(__dirname, DESTINATION),
+  };
+
+  try {
+    await storage.bucket(BUCKET_NAME).file(FILE_NAME).download(options);
+    console.log(`File downloaded to ${DESTINATION}`);
+  } catch (err) {
+    console.error('Error downloading file:', err.message);
+  }
+}
+
+downloadFile();
+
+====================
+
 # GCPFilesDownloader
 
 <dependencies>
